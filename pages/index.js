@@ -3,53 +3,49 @@ import Link from 'next/link'
 import { useState, useMemo } from 'react'
 import { fetchAllFeeds } from '../lib/rss'
 
+const CATEGORIES = ['All', 'Models', 'Tools', 'Money', 'Policy']
+
 export default function Home({ articles }) {
   const [tab, setTab] = useState('All')
 
-  const sources = useMemo(() => {
-    const s = new Set()
-    articles.forEach(a => {
-      if (a.source) s.add(a.source)
-    })
-    return ['All', ...Array.from(s)]
-  }, [articles])
-
   const filtered = useMemo(() => {
     if (tab === 'All') return articles
-    return articles.filter(a => a.source === tab)
+    return articles.filter(a => a.category === tab)
   }, [articles, tab])
 
   return (
     <>
       <Head>
-        <title>Pulse AI — Latest AI News</title>
-        <meta name="description" content="Pulse AI — curated AI news aggregated from niche sources. Refreshed every 30 minutes (ISR)." />
+        <title>PulseAI — AI & Tech for Indian Professionals</title>
+        <meta name="description" content="PulseAI curates the most important AI and tech stories every day, so Indian developers and founders can stay informed in 5 minutes." />
       </Head>
 
       <div className="container">
         <header className="header">
           <div>
-            <h1>Pulse AI</h1>
-            <div className="tagline">Curated AI news — refreshed every 30 minutes (ISR)</div>
+            <h1>PulseAI</h1>
+            <div className="tagline">
+              AI & Tech for Indian professionals — updated every 30 minutes
+            </div>
           </div>
           <div style={{ color: '#6b7280', fontSize: 13 }}>RSS · ISR (30m)</div>
         </header>
 
-        <nav className="tabs" aria-label="Sources">
-          {sources.map(s => (
+        <nav className="tabs" aria-label="Categories">
+          {CATEGORIES.map(c => (
             <button
-              key={s}
-              className={`tab ${s === tab ? 'active' : ''}`}
-              onClick={() => setTab(s)}
+              key={c}
+              className={`tab ${c === tab ? 'active' : ''}`}
+              onClick={() => setTab(c)}
             >
-              {s}
+              {c}
             </button>
           ))}
         </nav>
 
         <main style={{ marginTop: 18 }}>
           {filtered.length === 0 ? (
-            <div className="card"><p className="meta">No articles found. Try again later.</p></div>
+            <div className="card"><p className="meta">No articles in this category yet.</p></div>
           ) : (
             <div className="grid">
               {filtered.map(a => {
@@ -57,6 +53,7 @@ export default function Home({ articles }) {
                 const snippet = plain.length > 220 ? plain.slice(0, 220) + '…' : plain
                 return (
                   <article className="card" key={a.id}>
+                    <div className="category-badge">{a.category}</div>
                     <h2 className="card-title">
                       <Link href={`/article/${a.id}`}><a>{a.title}</a></Link>
                     </h2>
@@ -71,6 +68,10 @@ export default function Home({ articles }) {
             </div>
           )}
         </main>
+
+        <footer style={{ marginTop: 48, color: '#6b7280', fontSize: 13, textAlign: 'center' }}>
+          PulseAI aggregates headlines from public RSS feeds. All content belongs to the original publishers.
+        </footer>
       </div>
     </>
   )
