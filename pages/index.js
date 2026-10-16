@@ -1,9 +1,11 @@
 import Head from 'next/head'
 import Link from 'next/link'
 import { useState, useMemo } from 'react'
+import { createClient } from '@supabase/supabase-js'
 import { fetchAllFeeds } from '../lib/rss'
 
 const CATEGORIES = ['All', 'Models', 'Tools', 'Money', 'Policy']
+const PULSE_CATEGORIES = ['Models', 'Tools', 'Money', 'Policy']
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -16,7 +18,7 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString()
 }
 
-export default function Home({ articles }) {
+export default function Home({ articles, pulse }) {
   const [tab, setTab] = useState('All')
 
   const filtered = useMemo(() => {
@@ -24,7 +26,7 @@ export default function Home({ articles }) {
     return articles.filter(a => a.category === tab)
   }, [articles, tab])
 
-  const [hero, ...rest] = filtered
+  const hasPulse = PULSE_CATEGORIES.some(c => pulse && pulse[c])
 
   return (
     <>
@@ -54,6 +56,29 @@ export default function Home({ articles }) {
           </p>
         </section>
 
+        {hasPulse && (
+          <section className="pulse-section">
+            <h2 className="section-label">Today's Pulse</h2>
+            <div className="pulse-grid">
+              {PULSE_CATEGORIES.map(cat => {
+                const item = pulse[cat]
+                if (!item) return null
+                return (
+                  <div className="pulse-card" key={cat}>
+                    <div className="category-badge">{cat}</div>
+                    <p className="pulse-take">{item.take}</p>
+                    <div className="pulse-meta">
+                      <Link href={`/article/${item.articleId}`}>
+                        <a className="pulse-link">{item.articleTitle}</a>
+                      </Link>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
         <nav className="tabs" aria-label="Categories">
           {CATEGORIES.map(c => (
             <button
@@ -70,42 +95,25 @@ export default function Home({ articles }) {
           {filtered.length === 0 ? (
             <div className="card"><p className="meta">No articles in this category yet.</p></div>
           ) : (
-            <>
-              {hero && (
-                <Link href={`/article/${hero.id}`}>
-                  <a className="hero-card">
-                    <div className="category-badge">{hero.category}</div>
-                    <h2 className="hero-title">{hero.title}</h2>
-                    <p className="hero-summary">
-                      {(hero.content || '').replace(/(<([^>]+)>)/gi, '').slice(0, 240)}…
-                    </p>
-                    <div className="meta">
-                      {timeAgo(hero.pubDate)} · {hero.source}
+            <div className="grid">
+              {filtered.map(a => {
+                const plain = (a.content || '').replace(/(<([^>]+)>)/gi, '')
+                const snippet = plain.length > 180 ? plain.slice(0, 180) + '…' : plain
+                return (
+                  <article className="card" key={a.id}>
+                    <div className="category-badge">{a.category}</div>
+                    <h3 className="card-title">
+                      <Link href={`/article/${a.id}`}><a>{a.title}</a></Link>
+                    </h3>
+                    <p className="meta">{timeAgo(a.pubDate)} · {a.source}</p>
+                    {snippet ? <p className="summary">{snippet}</p> : null}
+                    <div className="card-footer">
+                      <Link href={`/article/${a.id}`}><a className="read-more">Read →</a></Link>
                     </div>
-                  </a>
-                </Link>
-              )}
-
-              <div className="grid">
-                {rest.map(a => {
-                  const plain = (a.content || '').replace(/(<([^>]+)>)/gi, '')
-                  const snippet = plain.length > 180 ? plain.slice(0, 180) + '…' : plain
-                  return (
-                    <article className="card" key={a.id}>
-                      <div className="category-badge">{a.category}</div>
-                      <h3 className="card-title">
-                        <Link href={`/article/${a.id}`}><a>{a.title}</a></Link>
-                      </h3>
-                      <p className="meta">{timeAgo(a.pubDate)} · {a.source}</p>
-                      {snippet ? <p className="summary">{snippet}</p> : null}
-                      <div className="card-footer">
-                        <Link href={`/article/${a.id}`}><a className="read-more">Read →</a></Link>
-                      </div>
-                    </article>
-                  )
-                })}
-              </div>
-            </>
+                  </article>
+                )
+              })}
+            </div>
           )}
         </main>
 
@@ -119,13 +127,38 @@ export default function Home({ articles }) {
 
 export async function getStaticProps() {
   const articles = await fetchAllFeeds().catch((err) => {
-    console.warn('fetchAllFeeds failed:', err && err.message ? err.message : err)
+    console.warn('fetchAllFeeds failed:', err?.message || err)
     return []
   })
 
+  let pulse = { Models: null, Tools: null, Money: null, Policy: null }
+
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+    const { data, error } = await supabase.from('pulse_takes').select('*')
+    if (error) throw error
+    if (data) {
+      data.forEach(row => {
+        pulse[row.category] = {
+          articleId: row.article_id,
+          articleTitle: row.article_title,
+          articleLink: row.article_link,
+          source: row.source,
+          take: row.take
+        }
+      })
+    }
+  } catch (err) {
+    console.warn('Supabase fetch failed:', err?.message || err)
+  }
+
   return {
     props: {
-      articles: articles.slice(0, 200)
+      articles: articles.slice(0, 200),
+      pulse
     },
     revalidate: 1800
   }
