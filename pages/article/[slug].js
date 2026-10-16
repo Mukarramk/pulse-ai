@@ -7,40 +7,49 @@ export default function ArticlePage({ article }) {
     return (
       <div className="container">
         <p>Article not found.</p>
-        <p><Link href="/"><a className="back-link">← Back</a></Link></p>
+        <p><Link href="/"><a className="back-link">← Back to PulseAI</a></Link></p>
       </div>
     )
   }
 
   const plainText = (article.content || '').replace(/(<([^>]+)>)/gi, '')
-  const excerpt = plainText.length > 400 ? plainText.slice(0, 400) + '…' : plainText
+  const excerpt = plainText.length > 500 ? plainText.slice(0, 500) + '…' : plainText
 
   return (
     <>
       <Head>
-        <title>{article.title} — Pulse AI</title>
+        <title>{article.title} — PulseAI</title>
         <meta name="description" content={article.title} />
       </Head>
 
       <div className="container">
-        <header className="header" style={{ marginBottom: 12 }}>
-          <div>
-            <h1 style={{ fontSize: 22 }}>{article.title}</h1>
-            <div className="tagline">{article.source}</div>
-          </div>
-          <div>
-            <Link href="/"><a className="back-link">← Home</a></Link>
-          </div>
+        <header className="header">
+          <Link href="/"><a className="logo">
+            <span className="logo-mark">P</span>
+            <span className="logo-text">PulseAI</span>
+          </a></Link>
+          <Link href="/"><a className="back-link">← All stories</a></Link>
         </header>
 
         <article className="article-shell">
-          <p className="meta">{new Date(article.pubDate).toLocaleString()} · {article.source}</p>
+          <div className="category-badge">{article.category}</div>
+          <h1 className="article-title">{article.title}</h1>
+          <p className="meta">
+            {new Date(article.pubDate).toLocaleString()} · {article.source}
+          </p>
 
           <div className="article-body">
             <p>{excerpt || 'Read the full story at the source.'}</p>
           </div>
 
-          <p><a className="source-link" href={article.link} target="_blank" rel="noopener noreferrer">Read on source →</a></p>
+          <a
+            className="source-link"
+            href={article.link}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Read full story on {article.source} →
+          </a>
         </article>
       </div>
     </>
