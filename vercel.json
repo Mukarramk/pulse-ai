@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/cron/generate-pulse", "schedule": "30 3 * * *" }
+  ]
+}
