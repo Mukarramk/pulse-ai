@@ -28,7 +28,6 @@ export default function Home({ articles, pulse }) {
 
   const hasPulse = PULSE_CATEGORIES.some(c => pulse && pulse[c])
 
-  // Handle subscribe form submission
   const handleSubscribe = async (e) => {
     e.preventDefault()
     const email = e.target.email.value
@@ -72,18 +71,32 @@ export default function Home({ articles, pulse }) {
 
         {hasPulse && (
           <section className="pulse-section">
-            <h2 className="section-label">Today's Pulse</h2>
+            <div className="section-header">
+              <h2 className="section-label">Today's Pulse</h2>
+              <span className="section-meta">Curated by AI for India</span>
+            </div>
             <div className="pulse-grid">
               {PULSE_CATEGORIES.map(cat => {
                 const item = pulse[cat]
                 if (!item) return null
                 return (
                   <div className="pulse-card" key={cat}>
-                    <div className="category-badge">{cat}</div>
-                    <p className="pulse-take">{item.take}</p>
-                    <div className="pulse-meta">
+                    <div className="pulse-card-header">
+                      <div className="category-badge">{cat}</div>
+                    </div>
+                    <h3 className="pulse-title">
                       <Link href={`/article/${item.articleId}`}>
-                        <a className="pulse-link">{item.articleTitle}</a>
+                        <a>{item.articleTitle}</a>
+                      </Link>
+                    </h3>
+                    <div className="pulse-content">
+                      <span className="pulse-label">Why it matters:</span>
+                      <p className="pulse-take">{item.take}</p>
+                    </div>
+                    <div className="pulse-footer">
+                      <span className="pulse-source">{item.source}</span>
+                      <Link href={`/article/${item.articleId}`}>
+                        <a className="pulse-read-more">Read Story →</a>
                       </Link>
                     </div>
                   </div>
@@ -131,7 +144,6 @@ export default function Home({ articles, pulse }) {
           )}
         </main>
 
-        {/* Subscribe Section */}
         <section className="subscribe-section">
           <h2 className="subscribe-title">Get the daily AI pulse in your inbox</h2>
           <p className="subscribe-sub">Join Indian developers and founders. No spam.</p>
