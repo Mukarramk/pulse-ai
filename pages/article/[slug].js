@@ -12,7 +12,9 @@ export default function ArticlePage({ article }) {
     )
   }
 
+  // Clean the HTML tags out of the content
   const plainText = (article.content || '').replace(/(<([^>]+)>)/gi, '')
+  // Limit to 500 characters for a clean summary
   const excerpt = plainText.length > 500 ? plainText.slice(0, 500) + '…' : plainText
 
   return (
@@ -32,24 +34,31 @@ export default function ArticlePage({ article }) {
         </header>
 
         <article className="article-shell">
-          <div className="category-badge">{article.category}</div>
+          <div className="category-badge" style={{ marginBottom: '16px' }}>{article.category}</div>
+          
           <h1 className="article-title">{article.title}</h1>
-          <p className="meta">
+          
+          <p className="meta" style={{ fontSize: '14px', marginBottom: '24px' }}>
             {new Date(article.pubDate).toLocaleString()} · {article.source}
           </p>
 
           <div className="article-body">
-            <p>{excerpt || 'Read the full story at the source.'}</p>
+            <p>{excerpt || 'Read the full story at the source link below.'}</p>
           </div>
 
-          <a
-            className="source-link"
-            href={article.link}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read full story on {article.source} →
-          </a>
+          <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
+            <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>
+              PulseAI provides summaries. To read the complete article, visit the original source.
+            </p>
+            <a
+              className="source-link"
+              href={article.link}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Read Full Article on {article.source} →
+            </a>
+          </div>
         </article>
       </div>
     </>
