@@ -1,44 +1,57 @@
-import { createClient } from '@supabase/supabase-js'
-import { fetchAllFeeds } from '../../../lib/rss'
-import { rewriteArticle } from '../../../lib/gemini'
+// pages/api/cron/generate-pulse.js
 
-const CATEGORIES = ['Models', 'Tools', 'Money', 'Policy']
+export const dynamic = 'force-dynamic';
+
+import { createClient } from '@supabase/supabase-js';
+import { fetchAllFeeds } from '../../../lib/rss';
+import { rewriteArticle } from '../../../lib/gemini';
+
+const CATEGORIES = ['Models', 'Tools', 'Money', 'Policy'];
 
 export default async function handler(req, res) {
-  const auth = req.headers.authorization
+  // 1. Security Check (Vercel Cron sends this header automatically)
+  const auth = req.headers.authorization;
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: 'Unauthorized' })
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  // 2. Initialize Supabase with Service Role Key (to bypass RLS for writing)
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
-  )
+  );
 
   try {
-    const articles = await fetchAllFeeds()
-    const results = []
+    // 3. Fetch all RSS articles
+    const articles = await fetchAllFeeds();
+    const results = [];
 
+    // 4. Loop through each category
     for (const cat of CATEGORIES) {
-      const candidates = articles.filter(a => a.category === cat)
+      // Find the most recent article in this category
+      const candidates = articles.filter(a => a.category === cat);
+      
       if (candidates.length === 0) {
-        results.push({ category: cat, status: 'no articles' })
-        continue
+        results.push({ category: cat, status: 'no articles found' });
+        continue;
       }
 
-      const top = candidates[0]
+      const top = candidates[0];
+
+      // 5. Generate the "PulseAI Take" using Gemini
       const { text, error } = await rewriteArticle({
         title: top.title,
         content: top.content,
         category: cat,
         source: top.source
-      })
+      });
 
       if (error || !text) {
-        results.push({ category: cat, status: 'gemini failed', error })
-        continue
+        results.push({ category: cat, status: 'gemini failed', error: error || 'Empty response' });
+        continue;
       }
 
+      // 6. Save (Upsert) to Supabase
       const { error: dbError } = await supabase
         .from('pulse_takes')
         .upsert({
@@ -49,17 +62,20 @@ export default async function handler(req, res) {
           source: top.source,
           take: text,
           generated_at: new Date().toISOString()
-        }, { onConflict: 'category' })
+        }, { onConflict: 'category' }); // Unique constraint on category
 
-      results.push({
-        category: cat,
-        status: dbError ? 'db error' : 'ok',
-        error: dbError?.message
-      })
+      if (dbError) {
+        results.push({ category: cat, status: 'db error', error: dbError.message });
+      } else {
+        results.push({ category: cat, status: 'ok' });
+      }
     }
 
-    return res.status(200).json({ success: true, results })
+    // 7. Return success
+    return res.status(200).json({ success: true, results });
+
   } catch (err) {
-    return res.status(500).json({ error: err.message })
+    console.error('Cron error:', err);
+    return res.status(500).json({ error: err.message });
   }
 }
