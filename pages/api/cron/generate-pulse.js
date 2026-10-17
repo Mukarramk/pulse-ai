@@ -1,4 +1,13 @@
 export default async function handler(req, res) {
+  // --- Add these 4 lines back ---
+  const auth = req.headers.authorization;
+  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  // ------------------------------
+
+  try {
+export default async function handler(req, res) {
   // Security check is temporarily bypassed for testing
 
   try {
