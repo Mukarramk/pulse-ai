@@ -89,6 +89,12 @@ export default function Home({ articles, pulse }) {
                 if (!item) return null
                 return (
                   <div className="pulse-card" key={cat}>
+                    {/* --- ADDED IMAGE HERE --- */}
+                    {item.imageUrl && (
+                      <div className="card-image-wrapper">
+                        <img src={item.imageUrl} alt={item.articleTitle} className="card-image" />
+                      </div>
+                    )}
                     <div className="pulse-card-header">
                       <div className="category-badge">{cat}</div>
                     </div>
@@ -136,6 +142,12 @@ export default function Home({ articles, pulse }) {
                 const snippet = plain.length > 180 ? plain.slice(0, 180) + '…' : plain
                 return (
                   <article className="card" key={a.id}>
+                    {/* --- ADDED IMAGE HERE --- */}
+                    {a.imageUrl && (
+                      <div className="card-image-wrapper">
+                        <img src={a.imageUrl} alt={a.title} className="card-image" />
+                      </div>
+                    )}
                     <div className="category-badge">{a.category}</div>
                     <h3 className="card-title">
                       <Link href={`/article/${a.id}`}><a>{a.title}</a></Link>
