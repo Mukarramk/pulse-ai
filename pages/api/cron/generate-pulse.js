@@ -9,26 +9,21 @@ import { rewriteArticle } from '../../../lib/gemini';
 const CATEGORIES = ['Models', 'Tools', 'Money', 'Policy'];
 
 export default async function handler(req, res) {
-  // 1. Security Check (Vercel Cron sends this header automatically)
   const auth = req.headers.authorization;
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  // 2. Initialize Supabase with Service Role Key (to bypass RLS for writing)
   const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
   try {
-    // 3. Fetch all RSS articles
     const articles = await fetchAllFeeds();
     const results = [];
 
-    // 4. Loop through each category
     for (const cat of CATEGORIES) {
-      // Find the most recent article in this category
       const candidates = articles.filter(a => a.category === cat);
       
       if (candidates.length === 0) {
@@ -38,7 +33,6 @@ export default async function handler(req, res) {
 
       const top = candidates[0];
 
-      // 5. Generate the "PulseAI Take" using Gemini
       const { text, error } = await rewriteArticle({
         title: top.title,
         content: top.content,
@@ -51,7 +45,6 @@ export default async function handler(req, res) {
         continue;
       }
 
-      // 6. Save (Upsert) to Supabase
       const { error: dbError } = await supabase
         .from('pulse_takes')
         .upsert({
@@ -62,7 +55,7 @@ export default async function handler(req, res) {
           source: top.source,
           take: text,
           generated_at: new Date().toISOString()
-        }, { onConflict: 'category' }); // Unique constraint on category
+        }, { onConflict: 'category' });
 
       if (dbError) {
         results.push({ category: cat, status: 'db error', error: dbError.message });
@@ -71,7 +64,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // 7. Return success
     return res.status(200).json({ success: true, results });
 
   } catch (err) {
