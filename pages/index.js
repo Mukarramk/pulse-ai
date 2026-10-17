@@ -28,6 +28,20 @@ export default function Home({ articles, pulse }) {
 
   const hasPulse = PULSE_CATEGORIES.some(c => pulse && pulse[c])
 
+  // Handle subscribe form submission
+  const handleSubscribe = async (e) => {
+    e.preventDefault()
+    const email = e.target.email.value
+    const res = await fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    })
+    const data = await res.json()
+    alert(data.message || data.error)
+    if (res.ok) e.target.reset()
+  }
+
   return (
     <>
       <Head>
@@ -116,6 +130,22 @@ export default function Home({ articles, pulse }) {
             </div>
           )}
         </main>
+
+        {/* Subscribe Section */}
+        <section className="subscribe-section">
+          <h2 className="subscribe-title">Get the daily AI pulse in your inbox</h2>
+          <p className="subscribe-sub">Join Indian developers and founders. No spam.</p>
+          <form className="subscribe-form" onSubmit={handleSubscribe}>
+            <input 
+              name="email" 
+              type="email" 
+              placeholder="you@example.com" 
+              required 
+              className="subscribe-input"
+            />
+            <button type="submit" className="subscribe-button">Subscribe</button>
+          </form>
+        </section>
 
         <footer className="footer">
           PulseAI aggregates headlines from public RSS feeds. All content belongs to the original publishers.
