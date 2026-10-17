@@ -73,7 +73,7 @@ export default function Home({ articles, pulse }) {
           <section className="pulse-section">
             <div className="section-header">
               <h2 className="section-label">Today's Pulse</h2>
-              <span className="section-meta">Curated by AI for India</span>
+              <span className="section-meta">Curated for Busy Professionals</span>
             </div>
             <div className="pulse-grid">
               {PULSE_CATEGORIES.map(cat => {
