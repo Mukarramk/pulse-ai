@@ -1,20 +1,17 @@
 export default async function handler(req, res) {
-  // --- Add these 4 lines back ---
+  // 1. Security Check
   const auth = req.headers.authorization;
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-  // ------------------------------
 
   try {
-export default async function handler(req, res) {
-  // Security check is temporarily bypassed for testing
-
-  try {
+    // 2. Import dependencies dynamically
     const { createClient } = require('@supabase/supabase-js');
     const { fetchAllFeeds } = require('../../../lib/rss');
     const { rewriteArticle } = require('../../../lib/gemini');
 
+    // 3. Initialize Supabase
     const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -24,6 +21,7 @@ export default async function handler(req, res) {
     const results = [];
     const CATEGORIES = ['Models', 'Tools', 'Money', 'Policy'];
 
+    // 4. Loop through categories
     for (const cat of CATEGORIES) {
       const candidates = articles.filter(a => a.category === cat);
       
@@ -34,6 +32,7 @@ export default async function handler(req, res) {
 
       const top = candidates[0];
 
+      // 5. Generate take
       const { text, error } = await rewriteArticle({
         title: top.title,
         content: top.content,
@@ -46,6 +45,7 @@ export default async function handler(req, res) {
         continue;
       }
 
+      // 6. Save to Supabase
       const { error: dbError } = await supabase
         .from('pulse_takes')
         .upsert({
