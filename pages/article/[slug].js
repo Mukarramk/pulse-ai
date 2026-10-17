@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
 import { fetchAllFeeds } from '../../lib/rss'
 
 export default function ArticlePage({ article }) {
@@ -12,9 +13,7 @@ export default function ArticlePage({ article }) {
     )
   }
 
-  // Clean the HTML tags out of the content
   const plainText = (article.content || '').replace(/(<([^>]+)>)/gi, '')
-  // Limit to 500 characters for a clean summary
   const excerpt = plainText.length > 500 ? plainText.slice(0, 500) + '…' : plainText
 
   return (
@@ -73,15 +72,47 @@ export async function getStaticPaths() {
 
 export async function getStaticProps({ params }) {
   const slug = params.slug
+  
+  // 1. Try to find the article in the live RSS feed
   const articles = await fetchAllFeeds().catch(() => [])
   const article = (articles || []).find(a => a.id === slug) || null
 
-  if (!article) {
-    return { notFound: true, revalidate: 1800 }
+  if (article) {
+    return { props: { article }, revalidate: 1800 }
   }
 
-  return {
-    props: { article },
-    revalidate: 1800
+  // 2. If not found in RSS, check Supabase for the saved Pulse take
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+    const { data, error } = await supabase
+      .from('pulse_takes')
+      .select('*')
+      .eq('article_id', slug)
+      .single()
+
+    if (data && !error) {
+      // We found it in the DB, return a minimal article object so the page renders
+      return {
+        props: {
+          article: {
+            title: data.article_title,
+            link: data.article_link,
+            content: 'This story is from a previous day\'s pulse. Click the link below to read the full article.',
+            source: data.source,
+            category: data.category,
+            pubDate: data.generated_at,
+          }
+        },
+        revalidate: 1800
+      }
+    }
+  } catch (err) {
+    console.warn('Supabase lookup failed:', err.message)
   }
+
+  // 3. If not found anywhere, show 404
+  return { notFound: true, revalidate: 1800 }
 }
