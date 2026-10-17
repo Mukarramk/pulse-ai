@@ -65,7 +65,10 @@ export default function Home({ articles, pulse }) {
             <span className="logo-mark">P</span>
             <span className="logo-text">PulseAI</span>
           </a></Link>
-          <div className="header-meta">Updated every 30 min</div>
+          <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+            <Link href="/blog"><a className="read-more">Blog</a></Link>
+            <span className="header-meta">Updated every 30 min</span>
+          </div>
         </header>
 
         <section className="intro">
@@ -89,7 +92,6 @@ export default function Home({ articles, pulse }) {
                 if (!item) return null
                 return (
                   <div className="pulse-card" key={cat}>
-                    {/* --- ADDED IMAGE HERE --- */}
                     {item.imageUrl && (
                       <div className="card-image-wrapper">
                         <img src={item.imageUrl} alt={item.articleTitle} className="card-image" />
@@ -142,7 +144,6 @@ export default function Home({ articles, pulse }) {
                 const snippet = plain.length > 180 ? plain.slice(0, 180) + '…' : plain
                 return (
                   <article className="card" key={a.id}>
-                    {/* --- ADDED IMAGE HERE --- */}
                     {a.imageUrl && (
                       <div className="card-image-wrapper">
                         <img src={a.imageUrl} alt={a.title} className="card-image" />
