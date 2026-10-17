@@ -28,18 +28,30 @@ export default function Home({ articles, pulse }) {
 
   const hasPulse = PULSE_CATEGORIES.some(c => pulse && pulse[c])
 
+   const [subStatus, setSubStatus] = useState({ type: '', message: '' })
+
   const handleSubscribe = async (e) => {
     e.preventDefault()
     const email = e.target.email.value
+    setSubStatus({ type: 'loading', message: 'Subscribing...' })
+    
     const res = await fetch('/api/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
     })
     const data = await res.json()
-    alert(data.message || data.error)
-    if (res.ok) e.target.reset()
+    
+    if (res.ok) {
+      setSubStatus({ type: 'success', message: 'Success! Check your inbox for a welcome email.' })
+      e.target.reset()
+    } else {
+      setSubStatus({ type: 'error', message: data.error || 'Something went wrong.' })
+    }
   }
+
+  return (
+    <>
 
   return (
     <>
