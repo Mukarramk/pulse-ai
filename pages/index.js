@@ -20,6 +20,7 @@ function timeAgo(dateStr) {
 
 export default function Home({ articles, pulse }) {
   const [tab, setTab] = useState('All')
+  const [subStatus, setSubStatus] = useState({ type: '', message: '' })
 
   const filtered = useMemo(() => {
     if (tab === 'All') return articles
@@ -27,8 +28,6 @@ export default function Home({ articles, pulse }) {
   }, [articles, tab])
 
   const hasPulse = PULSE_CATEGORIES.some(c => pulse && pulse[c])
-
-   const [subStatus, setSubStatus] = useState({ type: '', message: '' })
 
   const handleSubscribe = async (e) => {
     e.preventDefault()
@@ -49,9 +48,6 @@ export default function Home({ articles, pulse }) {
       setSubStatus({ type: 'error', message: data.error || 'Something went wrong.' })
     }
   }
-
-  return (
-    <>
 
   return (
     <>
@@ -159,16 +155,34 @@ export default function Home({ articles, pulse }) {
         <section className="subscribe-section">
           <h2 className="subscribe-title">Get the daily AI pulse in your inbox</h2>
           <p className="subscribe-sub">Join Indian developers and founders. No spam.</p>
-          <form className="subscribe-form" onSubmit={handleSubscribe}>
-            <input 
-              name="email" 
-              type="email" 
-              placeholder="you@example.com" 
-              required 
-              className="subscribe-input"
-            />
-            <button type="submit" className="subscribe-button">Subscribe</button>
-          </form>
+          
+          {subStatus.type === 'success' ? (
+            <div className="subscribe-success">
+              {subStatus.message}
+            </div>
+          ) : (
+            <form className="subscribe-form" onSubmit={handleSubscribe}>
+              <input 
+                name="email" 
+                type="email" 
+                placeholder="you@example.com" 
+                required 
+                className="subscribe-input"
+                disabled={subStatus.type === 'loading'}
+              />
+              <button 
+                type="submit" 
+                className="subscribe-button"
+                disabled={subStatus.type === 'loading'}
+              >
+                {subStatus.type === 'loading' ? 'Subscribing...' : 'Subscribe'}
+              </button>
+            </form>
+          )}
+          
+          {subStatus.type === 'error' && (
+            <p className="subscribe-error">{subStatus.message}</p>
+          )}
         </section>
 
         <footer className="footer">
