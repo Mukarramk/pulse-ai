@@ -473,6 +473,69 @@ a { color: inherit; text-decoration: none; }
   opacity: 0.6;
   cursor: not-allowed;
 }
+.subscribe-section {
+  margin-top: 48px;
+  padding: 32px;
+  background: linear-gradient(135deg, #f0f4ff, #faf5ff);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.subscribe-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.subscribe-sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 20px;
+}
+
+.subscribe-form {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.subscribe-input {
+  flex: 1;
+  min-width: 220px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+}
+
+.subscribe-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.subscribe-button {
+  padding: 12px 24px;
+  background: var(--fg);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 150ms ease;
+}
+
+.subscribe-button:hover {
+  opacity: 0.85;
+}
 
 .pulse-read-more:hover {
   text-decoration: underline;
