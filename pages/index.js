@@ -1,6 +1,6 @@
 import Head from 'next/head'
 import Link from 'next/link'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { fetchAllFeeds } from '../lib/rss'
 
@@ -21,6 +21,17 @@ function timeAgo(dateStr) {
 export default function Home({ articles, pulse }) {
   const [tab, setTab] = useState('All')
   const [subStatus, setSubStatus] = useState({ type: '', message: '' })
+  const [role, setRole] = useState('engineer')
+
+  useEffect(() => {
+    const savedRole = localStorage.getItem('pulse_role')
+    if (savedRole) setRole(savedRole)
+  }, [])
+
+  const handleRoleChange = (newRole) => {
+    setRole(newRole)
+    localStorage.setItem('pulse_role', newRole)
+  }
 
   const filtered = useMemo(() => {
     if (tab === 'All') return articles
@@ -47,6 +58,28 @@ export default function Home({ articles, pulse }) {
     } else {
       setSubStatus({ type: 'error', message: data.error || 'Something went wrong.' })
     }
+  }
+
+  const playAudioBrief = () => {
+    if (!('speechSynthesis' in window)) {
+      alert('Your browser does not support text-to-speech.')
+      return
+    }
+    window.speechSynthesis.cancel()
+    const intro = `Here is your PulseAI brief for today.`
+    const roleName = role === 'engineer' ? 'Software Engineer' : role === 'pm' ? 'Product Manager' : 'Founder'
+    const items = PULSE_CATEGORIES.map(cat => {
+      const item = pulse[cat]
+      if (!item) return null
+      const take = item[`take_${role}`] || item.take
+      return `In ${cat} news: ${item.articleTitle}. Why it matters for a ${roleName}: ${take}`
+    }).filter(Boolean)
+    const outro = `That's your brief for today. Have a productive day.`
+    const fullText = [intro, ...items, outro].join(' ')
+    const utterance = new SpeechSynthesisUtterance(fullText)
+    utterance.rate = 1.0
+    utterance.pitch = 1.0
+    window.speechSynthesis.speak(utterance)
   }
 
   return (
@@ -78,18 +111,69 @@ export default function Home({ articles, pulse }) {
           <p className="intro-sub">
             The most important stories for Indian developers and founders — in 5 minutes.
           </p>
+          
+          <div style={{ marginTop: '24px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>I am a:</span>
+            <div style={{ display: 'flex', gap: '8px', background: 'var(--border)', padding: '4px', borderRadius: '12px' }}>
+              {[
+                { id: 'engineer', label: 'Engineer' },
+                { id: 'pm', label: 'Product Manager' },
+                { id: 'founder', label: 'Founder' }
+              ].map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => handleRoleChange(r.id)}
+                  style={{
+                    padding: '6px 16px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    background: role === r.id ? 'var(--bg)' : 'transparent',
+                    color: role === r.id ? 'var(--fg)' : 'var(--muted)',
+                    boxShadow: role === r.id ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </section>
 
         {hasPulse && (
           <section className="pulse-section">
             <div className="section-header">
               <h2 className="section-label">Today's Pulse</h2>
-              <span className="section-meta">Curated for Busy Professionals</span>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <button 
+                  onClick={playAudioBrief}
+                  style={{
+                    background: 'var(--primary)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  🔊 Listen to Brief
+                </button>
+                <span className="section-meta" style={{ margin: 0 }}>Curated for Busy Professionals</span>
+              </div>
             </div>
             <div className="pulse-grid">
               {PULSE_CATEGORIES.map(cat => {
                 const item = pulse[cat]
                 if (!item) return null
+                const activeTake = item[`take_${role}`] || item.take
                 return (
                   <div className="pulse-card" key={cat}>
                     {item.imageUrl && (
@@ -106,8 +190,8 @@ export default function Home({ articles, pulse }) {
                       </Link>
                     </h3>
                     <div className="pulse-content">
-                      <span className="pulse-label">Why it matters:</span>
-                      <p className="pulse-take">{item.take}</p>
+                      <span className="pulse-label">Why it matters ({role === 'pm' ? 'PM' : role === 'founder' ? 'Founder' : 'Engineer'}):</span>
+                      <p className="pulse-take">{activeTake}</p>
                     </div>
                     <div className="pulse-footer">
                       <span className="pulse-source">{item.source}</span>
@@ -228,7 +312,11 @@ export async function getStaticProps() {
           articleTitle: row.article_title,
           articleLink: row.article_link,
           source: row.source,
-          take: row.take
+          take: row.take,
+          take_engineer: row.take_engineer,
+          take_pm: row.take_pm,
+          take_founder: row.take_founder,
+          imageUrl: row.image_url
         }
       })
     }
