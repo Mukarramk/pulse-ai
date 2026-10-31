@@ -112,7 +112,12 @@ export default async function handler(req, res) {
       results
     })
 
-  } catch (err) {
-    return res.status(500).json({ error: err.message })
+   } catch (err) {
+    console.error('NEWSLETTER_FATAL_ERROR:', err)
+    return res.status(500).json({
+      error: err.message,
+      name: err.name,
+      stack: err.stack?.split('\n').slice(0, 5).join('\n')
+    })
   }
 }
