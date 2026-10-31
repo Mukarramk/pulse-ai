@@ -1,122 +1,77 @@
-import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export default async function handler(req, res) {
-    // Security: use the same CRON_SECRET to protect this endpoint
-  // const auth = req.headers.authorization
-  // if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-  //   return res.status(401).json({ error: 'Unauthorized' })
-  // }
-
   try {
+    const { createClient } = require('@supabase/supabase-js');
+    const { fetchAllFeeds } = require('../../../lib/rss');
+    const { rewriteArticle } = require('../../../lib/gemini');
+
     const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
-    )
+    );
 
-    // 1. Fetch today's Pulse takes
-    const { data: takes, error: takesError } = await supabase
-      .from('pulse_takes')
-      .select('*')
+    const articles = await fetchAllFeeds();
+    const results = [];
+    const CATEGORIES = ['Models', 'Tools', 'Money', 'Policy'];
 
-    if (takesError || !takes || takes.length === 0) {
-      return res.status(500).json({ error: 'No pulse data found' })
-    }
+    for (const cat of CATEGORIES) {
+      const candidates = articles.filter(a => a.category === cat);
+      
+      if (candidates.length === 0) {
+        results.push({ category: cat, status: 'no articles found' });
+        continue;
+      }
 
-    // 2. Fetch all subscribers
-    const { data: subscribers, error: subError } = await supabase
-      .from('subscribers')
-      .select('email')
+      const top = candidates[0];
 
-    if (subError || !subscribers || subscribers.length === 0) {
-      return res.status(200).json({ message: 'No subscribers yet' })
-    }
+      const { data, error } = await rewriteArticle({
+        title: top.title,
+        content: top.content,
+        category: cat,
+        source: top.source
+      });
 
-    // 3. Build the HTML email
-    const dateStr = new Date().toLocaleDateString('en-IN', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    })
+      if (error || !data) {
+        results.push({ category: cat, status: 'gemini failed', error: error || 'Empty response' });
+        continue;
+      }
 
-    const pulseHtml = takes.map(item => `
-      <div style="margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid #eaeaea;">
-        <div style="display: inline-block; background: #eff6ff; color: #2563eb; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; margin-bottom: 12px; letter-spacing: 0.05em;">
-          ${item.category}
-        </div>
-        <h2 style="font-size: 18px; font-weight: 700; line-height: 1.4; margin: 0 0 12px 0; color: #0a0a0a;">
-          ${item.article_title}
-        </h2>
-        <div style="background: #f8fafc; border-left: 3px solid #2563eb; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #2563eb; margin-bottom: 4px;">Why it matters</div>
-          <p style="font-size: 14px; line-height: 1.6; color: #333; margin: 0;">${item.take}</p>
-        </div>
-        <a href="${item.article_link}" style="color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none;">Read full story →</a>
-      </div>
-    `).join('')
+      const { error: dbError } = await supabase
+        .from('pulse_takes')
+        .upsert({
+          category: cat,
+          article_id: top.id,
+          article_title: top.title,
+          article_link: top.link,
+          source: top.source,
+          take: data.engineer,
+          take_engineer: data.engineer,
+          take_pm: data.pm,
+          take_founder: data.founder,
+          image_url: top.imageUrl || null,
+          generated_at: new Date().toISOString()
+        }, { onConflict: 'category' });
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fafafa; margin: 0; padding: 0;">
-        <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 40px 32px;">
-          
-          <div style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid #0a0a0a;">
-            <div style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #0a0a0a;">PulseAI</div>
-            <div style="font-size: 13px; color: #666; margin-top: 4px;">${dateStr}</div>
-          </div>
-
-          <h1 style="font-size: 28px; font-weight: 800; line-height: 1.2; margin: 0 0 8px 0; color: #0a0a0a;">
-            Your Daily Pulse
-          </h1>
-          <p style="font-size: 15px; color: #666; margin: 0 0 32px 0;">
-            The most important AI & tech stories for Indian professionals — in 5 minutes.
-          </p>
-
-          ${pulseHtml}
-
-          <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #eaeaea; text-align: center;">
-            <p style="font-size: 12px; color: #999; margin: 0 0 8px 0;">
-              PulseAI aggregates headlines from public RSS feeds. All content belongs to the original publishers.
-            </p>
-            <p style="font-size: 12px; color: #999; margin: 0;">
-              You're receiving this because you subscribed at pulse-ai-tawny-psi.vercel.app.
-            </p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
-
-    // 4. Send to each subscriber (Resend free tier: 100/day)
-    const results = []
-    for (const sub of subscribers) {
-      try {
-        await resend.emails.send({
-          from: 'PulseAI <onboarding@resend.dev>', // Change to your domain later
-          to: sub.email,
-          subject: `PulseAI Daily — ${dateStr}`,
-          html: html
-        })
-        results.push({ email: sub.email, status: 'sent' })
-      } catch (err) {
-        results.push({ email: sub.email, status: 'failed', error: err.message })
+      if (dbError) {
+        results.push({ category: cat, status: 'db error', error: dbError.message });
+      } else {
+        results.push({ category: cat, status: 'ok' });
       }
     }
 
-    return res.status(200).json({
-      success: true,
-      sent: results.filter(r => r.status === 'sent').length,
-      failed: results.filter(r => r.status === 'failed').length,
-      results
-    })
+    // Automatically trigger the newsletter after the pulse updates
+    try {
+      await fetch('https://pulse-ai-tawny-psi.vercel.app/api/send-newsletter')
+      results.push({ step: 'newsletter', status: 'triggered' })
+    } catch (newsletterErr) {
+      results.push({ step: 'newsletter', status: 'failed', error: newsletterErr.message })
+    }
 
-     } catch (err) {
+    return res.status(200).json({ success: true, results });
+
+  } catch (err) {
     return res.status(500).json({ 
-      ERROR_MESSAGE: err.message,
-      ERROR_NAME: err.name,
-      ERROR_STACK: err.stack ? err.stack.split('\n').slice(0, 3).join(' | ') : 'no stack'
-    })
+      error: 'Server crashed', 
+      message: err.message
+    });
   }
 }
