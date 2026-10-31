@@ -1,15 +1,9 @@
-// const auth = req.headers.authorization;
-// if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-//   return res.status(401).json({ error: 'Unauthorized' });
-// }
-
+export default async function handler(req, res) {
   try {
-    // 2. Import dependencies dynamically
     const { createClient } = require('@supabase/supabase-js');
     const { fetchAllFeeds } = require('../../../lib/rss');
     const { rewriteArticle } = require('../../../lib/gemini');
 
-    // 3. Initialize Supabase
     const supabase = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -19,7 +13,6 @@
     const results = [];
     const CATEGORIES = ['Models', 'Tools', 'Money', 'Policy'];
 
-    // 4. Loop through categories
     for (const cat of CATEGORIES) {
       const candidates = articles.filter(a => a.category === cat);
       
@@ -30,20 +23,18 @@
 
       const top = candidates[0];
 
-      // 5. Generate take
-      const { text, error } = await rewriteArticle({
+      const { data, error } = await rewriteArticle({
         title: top.title,
         content: top.content,
         category: cat,
         source: top.source
       });
 
-      if (error || !text) {
+      if (error || !data) {
         results.push({ category: cat, status: 'gemini failed', error: error || 'Empty response' });
         continue;
       }
 
-      // 6. Save to Supabase
       const { error: dbError } = await supabase
         .from('pulse_takes')
         .upsert({
@@ -52,7 +43,11 @@
           article_title: top.title,
           article_link: top.link,
           source: top.source,
-          take: text,
+          take: data.engineer,
+          take_engineer: data.engineer,
+          take_pm: data.pm,
+          take_founder: data.founder,
+          image_url: top.imageUrl || null,
           generated_at: new Date().toISOString()
         }, { onConflict: 'category' });
 
