@@ -1,3 +1,4 @@
+// v3 - newsletter trigger
 export default async function handler(req, res) {
   try {
     const { createClient } = require('@supabase/supabase-js');
@@ -56,6 +57,14 @@ export default async function handler(req, res) {
       } else {
         results.push({ category: cat, status: 'ok' });
       }
+    }
+
+    // Automatically trigger the newsletter after the pulse updates
+    try {
+      await fetch('https://pulse-ai-tawny-psi.vercel.app/api/send-newsletter')
+      results.push({ step: 'newsletter', status: 'triggered' })
+    } catch (newsletterErr) {
+      results.push({ step: 'newsletter', status: 'failed', error: newsletterErr.message })
     }
 
     return res.status(200).json({ success: true, results });
