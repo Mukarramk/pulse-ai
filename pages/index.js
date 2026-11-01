@@ -85,12 +85,8 @@ export default function Home({ articles, pulse }) {
   return (
     <>
       <Head>
-        <title>PulseAI — AI & Tech for Indian Professionals</title>
-        <meta name="description" content="PulseAI curates the most important AI and tech stories every day, so Indian developers and founders can stay informed in 5 minutes." />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-      </Head>
+                <title>PulseAI — AI & Tech for Busy Professionals</title>
+        <meta name="description" content="PulseAI curates the most important AI and tech stories every day, so busy professionals can stay informed in 5 minutes." />
 
       <div className="container">
         <header className="header">
