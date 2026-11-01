@@ -1,3 +1,4 @@
+// v2 - email curation
 // v4 - global repositioning + newsletter trigger
 export default async function handler(req, res) {
   try {
