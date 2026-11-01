@@ -1,3 +1,4 @@
+// v4 - global repositioning + newsletter trigger
 export default async function handler(req, res) {
   try {
     const { createClient } = require('@supabase/supabase-js');
