@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://pulse-ai-tawny-psi.vercel.app/sitemap.xml
