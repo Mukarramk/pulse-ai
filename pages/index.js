@@ -104,12 +104,15 @@ export default function Home({ articles, pulse }) {
           </div>
         </header>
 
-        <section className="intro">
+                <section className="intro">
           <h1 className="intro-title">
-            AI & Tech, <span className="gradient-text">curated for India</span>
+            AI & Tech, <span className="gradient-text">curated for busy professionals</span>
           </h1>
           <p className="intro-sub">
-            The most important stories for Indian developers and founders — in 5 minutes.
+            The most important stories for engineers, product managers, and founders — in 5 minutes.
+          </p>
+          <p style={{ fontSize: '13px', color: 'var(--muted)', marginTop: '6px' }}>
+            Built in India. Read worldwide.
           </p>
           
           <div style={{ marginTop: '24px', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
