@@ -1,4 +1,4 @@
-// v3 - newsletter trigger
+// v5 - email curation
 export default async function handler(req, res) {
   try {
     const { createClient } = require('@supabase/supabase-js');
@@ -48,6 +48,7 @@ export default async function handler(req, res) {
           take_engineer: data.engineer,
           take_pm: data.pm,
           take_founder: data.founder,
+          take_email: data.email,
           image_url: top.imageUrl || null,
           generated_at: new Date().toISOString()
         }, { onConflict: 'category' });
@@ -59,7 +60,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // Automatically trigger the newsletter after the pulse updates
     try {
       await fetch('https://pulse-ai-tawny-psi.vercel.app/api/send-newsletter')
       results.push({ step: 'newsletter', status: 'triggered' })
