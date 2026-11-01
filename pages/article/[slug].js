@@ -19,8 +19,26 @@ export default function ArticlePage({ article }) {
   return (
     <>
       <Head>
+              <Head>
         <title>{article.title} — PulseAI</title>
         <meta name="description" content={article.title} />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content={article.title} />
+        <meta property="og:description" content={article.title} />
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={`https://pulse-ai-tawny-psi.vercel.app/article/${article.id}`} />
+        {article.imageUrl && (
+          <meta property="og:image" content={article.imageUrl} />
+        )}
+        
+        {/* Twitter Card */}
+        <meta name="twitter:title" content={article.title} />
+        <meta name="twitter:description" content={article.title} />
+        {article.imageUrl && (
+          <meta name="twitter:image" content={article.imageUrl} />
+        )}
+      </Head>
       </Head>
 
       <div className="container">
