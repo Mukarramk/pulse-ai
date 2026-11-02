@@ -19,26 +19,8 @@ export default function ArticlePage({ article }) {
   return (
     <>
       <Head>
-              <Head>
         <title>{article.title} — PulseAI</title>
         <meta name="description" content={article.title} />
-        
-        {/* Open Graph */}
-        <meta property="og:title" content={article.title} />
-        <meta property="og:description" content={article.title} />
-        <meta property="og:type" content="article" />
-        <meta property="og:url" content={`https://pulse-ai-tawny-psi.vercel.app/article/${article.id}`} />
-        {article.imageUrl && (
-          <meta property="og:image" content={article.imageUrl} />
-        )}
-        
-        {/* Twitter Card */}
-        <meta name="twitter:title" content={article.title} />
-        <meta name="twitter:description" content={article.title} />
-        {article.imageUrl && (
-          <meta name="twitter:image" content={article.imageUrl} />
-        )}
-      </Head>
       </Head>
 
       <div className="container">
@@ -96,7 +78,23 @@ export async function getStaticProps({ params }) {
   const article = (articles || []).find(a => a.id === slug) || null
 
   if (article) {
-    return { props: { article }, revalidate: 1800 }
+    return { 
+      props: { 
+        article,
+        metaTags: {
+          'og:title': article.title,
+          'og:description': article.title,
+          'og:type': 'article',
+          'og:url': `https://pulse-ai-tawny-psi.vercel.app/article/${article.id}`,
+          'og:image': article.imageUrl || '',
+          'twitter:card': 'summary_large_image',
+          'twitter:title': article.title,
+          'twitter:description': article.title,
+          'twitter:image': article.imageUrl || '',
+        }
+      }, 
+      revalidate: 1800 
+    }
   }
 
   // 2. If not found in RSS, check Supabase for the saved Pulse take
@@ -112,7 +110,6 @@ export async function getStaticProps({ params }) {
       .single()
 
     if (data && !error) {
-      // We found it in the DB, return a minimal article object so the page renders
       return {
         props: {
           article: {
@@ -122,6 +119,18 @@ export async function getStaticProps({ params }) {
             source: data.source,
             category: data.category,
             pubDate: data.generated_at,
+            imageUrl: data.image_url || null,
+          },
+          metaTags: {
+            'og:title': data.article_title,
+            'og:description': data.article_title,
+            'og:type': 'article',
+            'og:url': `https://pulse-ai-tawny-psi.vercel.app/article/${slug}`,
+            'og:image': data.image_url || '',
+            'twitter:card': 'summary_large_image',
+            'twitter:title': data.article_title,
+            'twitter:description': data.article_title,
+            'twitter:image': data.image_url || '',
           }
         },
         revalidate: 1800
