@@ -78,18 +78,20 @@ export async function getStaticProps({ params }) {
   const article = (articles || []).find(a => a.id === slug) || null
 
   if (article) {
+    const plainText = (article.content || '').replace(/(<([^>]+)>)/gi, '').slice(0, 200)
+    
     return { 
       props: { 
         article,
         metaTags: {
           'og:title': article.title,
-          'og:description': article.title,
+          'og:description': plainText || article.title,
           'og:type': 'article',
           'og:url': `https://pulse-ai-tawny-psi.vercel.app/article/${article.id}`,
           'og:image': article.imageUrl || '',
           'twitter:card': 'summary_large_image',
           'twitter:title': article.title,
-          'twitter:description': article.title,
+          'twitter:description': plainText || article.title,
           'twitter:image': article.imageUrl || '',
         }
       }, 
@@ -110,12 +112,14 @@ export async function getStaticProps({ params }) {
       .single()
 
     if (data && !error) {
+      const emailTake = data.take_email || data.take || data.article_title
+      
       return {
         props: {
           article: {
             title: data.article_title,
             link: data.article_link,
-            content: 'This story is from a previous day\'s pulse. Click the link below to read the full article.',
+            content: emailTake,
             source: data.source,
             category: data.category,
             pubDate: data.generated_at,
@@ -123,13 +127,13 @@ export async function getStaticProps({ params }) {
           },
           metaTags: {
             'og:title': data.article_title,
-            'og:description': data.article_title,
+            'og:description': emailTake,
             'og:type': 'article',
             'og:url': `https://pulse-ai-tawny-psi.vercel.app/article/${slug}`,
             'og:image': data.image_url || '',
             'twitter:card': 'summary_large_image',
             'twitter:title': data.article_title,
-            'twitter:description': data.article_title,
+            'twitter:description': emailTake,
             'twitter:image': data.image_url || '',
           }
         },
