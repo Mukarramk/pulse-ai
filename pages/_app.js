@@ -3,6 +3,8 @@ import Head from 'next/head'
 import { GoogleAnalytics } from '@next/third-parties/google'
 
 export default function App({ Component, pageProps }) {
+  const { metaTags, ...rest } = pageProps
+
   return (
     <>
       <Head>
@@ -15,8 +17,13 @@ export default function App({ Component, pageProps }) {
         <meta property="og:locale" content="en_US" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@pulseai" />
+        
+        {/* Render dynamic meta tags passed from any page */}
+        {metaTags && Object.entries(metaTags).map(([property, content]) =>
+          content ? <meta key={property} property={property} content={content} /> : null
+        )}
       </Head>
-      <Component {...pageProps} />
+      <Component {...rest} />
       <GoogleAnalytics gaId="G-58SE3HP4CP" />
     </>
   )
