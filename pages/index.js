@@ -182,7 +182,6 @@ export default function Home({ articles, pulse, debugInfo }) {
           </div>
         </section>
 
-        {/* DEBUG BANNER - visible on the page */}
         {debugInfo && (
           <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '16px', borderRadius: '8px', marginBottom: '20px', fontSize: '12px', fontFamily: 'monospace', color: '#991b1b' }}>
             <strong>PULSE DEBUG:</strong>
@@ -352,8 +351,8 @@ export async function getStaticProps() {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     )
     
-    // Cache buster: select id twice
-    const { data, error } = await supabase.from('pulse_takes').select('*, id')
+    // Cache buster: select a specific column set
+    const { data, error } = await supabase.from('pulse_takes').select('category, article_id, article_title, article_link, source, take, take_engineer, take_pm, take_founder, image_url')
     
     debugInfo = `error: ${error ? error.message : 'none'} | rows: ${data ? data.length : 0} | data: ${data ? JSON.stringify(data.map(r => r.category)) : 'null'}`
     
