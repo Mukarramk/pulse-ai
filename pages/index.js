@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { fetchAllFeeds } from '../lib/rss'
+export const dynamic = 'force-dynamic';
 
 const CATEGORIES = ['All', 'Models', 'Tools', 'Money', 'Policy']
 const PULSE_CATEGORIES = ['Models', 'Tools', 'Money', 'Policy']
