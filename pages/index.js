@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { fetchAllFeeds } from '../lib/rss'
-export const dynamic = 'force-dynamic';
 
 const CATEGORIES = ['All', 'Models', 'Tools', 'Money', 'Policy']
 const PULSE_CATEGORIES = ['Models', 'Tools', 'Money', 'Policy']
@@ -337,7 +336,7 @@ export default function Home({ articles, pulse, debugInfo }) {
   )
 }
 
-export async function getStaticProps() {
+export async function getServerSideProps() {
   const articles = await fetchAllFeeds().catch((err) => {
     console.warn('fetchAllFeeds failed:', err?.message || err)
     return []
@@ -359,7 +358,6 @@ export async function getStaticProps() {
       }
     )
     
-    // Cache buster: select a specific column set
     const { data, error } = await supabase.from('pulse_takes').select('category, article_id, article_title, article_link, source, take, take_engineer, take_pm, take_founder, image_url')
     
     debugInfo = `error: ${error ? error.message : 'none'} | rows: ${data ? data.length : 0} | data: ${data ? JSON.stringify(data.map(r => r.category)) : 'null'}`
@@ -390,7 +388,6 @@ export async function getStaticProps() {
       articles: articles.slice(0, 200),
       pulse,
       debugInfo
-    },
-    revalidate: 1800
+    }
   }
 }
