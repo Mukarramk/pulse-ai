@@ -346,10 +346,16 @@ export async function getServerSideProps() {
   let debugInfo = ''
 
   try {
+    // Use the anon key as the placeholder, but override with the secret key in the Authorization header
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       {
+        global: {
+          headers: {
+            Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+        },
         auth: {
           persistSession: false,
           autoRefreshToken: false,
