@@ -9,13 +9,10 @@ export default function App({ Component, pageProps }) {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#2563eb" />
-        
-        {/* Open Graph defaults */}
+        <meta name="google-site-verification" content="wJGArdQFFxsvl_09GnEoAe-lIy6qLGGIXOgKmbovjYI" />
         <meta property="og:site_name" content="PulseAI" />
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="en_US" />
-        
-        {/* Twitter defaults */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@pulseai" />
       </Head>
