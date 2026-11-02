@@ -18,7 +18,7 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString()
 }
 
-export default function Home({ articles, pulse }) {
+export default function Home({ articles, pulse, debugInfo }) {
   const [tab, setTab] = useState('All')
   const [subStatus, setSubStatus] = useState({ type: '', message: '' })
   const [role, setRole] = useState('engineer')
@@ -182,6 +182,14 @@ export default function Home({ articles, pulse }) {
           </div>
         </section>
 
+        {/* DEBUG BANNER - visible on the page */}
+        {debugInfo && (
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '16px', borderRadius: '8px', marginBottom: '20px', fontSize: '12px', fontFamily: 'monospace', color: '#991b1b' }}>
+            <strong>PULSE DEBUG:</strong>
+            <pre style={{ margin: '8px 0 0 0', whiteSpace: 'pre-wrap' }}>{debugInfo}</pre>
+          </div>
+        )}
+
         {hasPulse && (
           <section className="pulse-section">
             <div className="section-header">
@@ -336,13 +344,19 @@ export async function getStaticProps() {
   })
 
   let pulse = { Models: null, Tools: null, Money: null, Policy: null }
+  let debugInfo = ''
 
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     )
-    const { data, error } = await supabase.from('pulse_takes').select('*')
+    
+    // Cache buster: select id twice
+    const { data, error } = await supabase.from('pulse_takes').select('*, id')
+    
+    debugInfo = `error: ${error ? error.message : 'none'} | rows: ${data ? data.length : 0} | data: ${data ? JSON.stringify(data.map(r => r.category)) : 'null'}`
+    
     if (error) throw error
     if (data) {
       data.forEach(row => {
@@ -360,13 +374,15 @@ export async function getStaticProps() {
       })
     }
   } catch (err) {
+    debugInfo = `catch: ${err.message}`
     console.warn('Supabase fetch failed:', err?.message || err)
   }
 
   return {
     props: {
       articles: articles.slice(0, 200),
-      pulse
+      pulse,
+      debugInfo
     },
     revalidate: 1800
   }
