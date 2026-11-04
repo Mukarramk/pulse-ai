@@ -18,7 +18,7 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString()
 }
 
-export default function Home({ articles, pulse, debugInfo }) {
+export default function Home({ articles, pulse }) {
   const [tab, setTab] = useState('All')
   const [subStatus, setSubStatus] = useState({ type: '', message: '' })
   const [role, setRole] = useState('engineer')
@@ -182,13 +182,6 @@ export default function Home({ articles, pulse, debugInfo }) {
           </div>
         </section>
 
-        {debugInfo && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '16px', borderRadius: '8px', marginBottom: '20px', fontSize: '12px', fontFamily: 'monospace', color: '#991b1b' }}>
-            <strong>PULSE DEBUG:</strong>
-            <pre style={{ margin: '8px 0 0 0', whiteSpace: 'pre-wrap' }}>{debugInfo}</pre>
-          </div>
-        )}
-
         {hasPulse && (
           <section className="pulse-section">
             <div className="section-header">
@@ -343,18 +336,14 @@ export async function getServerSideProps() {
   })
 
   let pulse = { Models: null, Tools: null, Money: null, Policy: null }
-  let debugInfo = ''
 
   try {
-    // Simple client using only the public key
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     )
     
     const { data, error } = await supabase.from('pulse_takes').select('*')
-    
-    debugInfo = `error: ${error ? error.message : 'none'} | rows: ${data ? data.length : 0} | data: ${data ? JSON.stringify(data.map(r => r.category)) : 'null'}`
     
     if (error) throw error
     if (data) {
@@ -373,15 +362,13 @@ export async function getServerSideProps() {
       })
     }
   } catch (err) {
-    debugInfo = `catch: ${err.message}`
     console.warn('Supabase fetch failed:', err?.message || err)
   }
 
   return {
     props: {
       articles: articles.slice(0, 200),
-      pulse,
-      debugInfo
+      pulse
     }
   }
 }
