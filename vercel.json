@@ -1,0 +1,9 @@
+{
+  "crons": [
+    { "path": "/api/cron/generate-pulse?category=Models", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/generate-pulse?category=Tools", "schedule": "5 3 * * *" },
+    { "path": "/api/cron/generate-pulse?category=Money", "schedule": "10 3 * * *" },
+    { "path": "/api/cron/generate-pulse?category=Policy", "schedule": "15 3 * * *" },
+    { "path": "/api/cron/send-daily-newsletter", "schedule": "30 3 * * *" }
+  ]
+}
