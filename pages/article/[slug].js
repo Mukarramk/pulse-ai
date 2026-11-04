@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import { fetchAllFeeds } from '../../lib/rss'
 
-export default function ArticlePage({ article }) {
+export default function ArticlePage({ article, take }) {
   if (!article) {
     return (
       <div className="container">
@@ -58,9 +58,35 @@ export default function ArticlePage({ article }) {
             </div>
           )}
 
-          <div className="article-body" style={{ fontSize: '18px', lineHeight: '1.8', color: '#333' }}>
-            <p>{excerpt || 'Read the full story at the source link below.'}</p>
-          </div>
+          {take && (
+            <div style={{
+              background: '#f8fafc',
+              borderLeft: '4px solid #2563eb',
+              padding: '20px 24px',
+              borderRadius: '8px',
+              marginBottom: '32px'
+            }}>
+              <div style={{
+                fontSize: '11px',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                color: '#2563eb',
+                marginBottom: '8px',
+                letterSpacing: '0.05em'
+              }}>
+                Why it matters
+              </div>
+              <p style={{ fontSize: '16px', lineHeight: '1.7', color: '#333', margin: 0, fontWeight: 500 }}>
+                {take}
+              </p>
+            </div>
+          )}
+
+          {!take && (
+            <div className="article-body" style={{ fontSize: '18px', lineHeight: '1.8', color: '#333' }}>
+              <p>{excerpt || 'Read the full story at the source link below.'}</p>
+            </div>
+          )}
 
           <div style={{ 
             marginTop: '48px', 
@@ -105,8 +131,22 @@ export async function getStaticProps({ params }) {
   const article = (articles || []).find(a => a.id === slug) || null
 
   if (article) {
+    let take = null
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      )
+      const { data } = await supabase
+        .from('pulse_takes')
+        .select('take_engineer, take_pm, take_founder')
+        .eq('article_id', article.id)
+        .single()
+      if (data) take = data.take_engineer || data.take_pm || data.take_founder
+    } catch (e) {}
+
     return { 
-      props: { article },
+      props: { article, take },
       revalidate: 1800 
     }
   }
@@ -115,7 +155,7 @@ export async function getStaticProps({ params }) {
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     )
     const { data, error } = await supabase
       .from('pulse_takes')
@@ -134,7 +174,8 @@ export async function getStaticProps({ params }) {
             category: data.category,
             pubDate: data.generated_at,
             imageUrl: data.image_url || null,
-          }
+          },
+          take: data.take_engineer || data.take_pm || data.take_founder || null
         },
         revalidate: 1800
       }
