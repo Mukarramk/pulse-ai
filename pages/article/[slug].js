@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import { fetchAllFeeds } from '../../lib/rss'
 
-export default function ArticlePage({ article }) {
+export default function ArticlePage({ article, take }) {
   if (!article) {
     return (
       <div className="container">
@@ -14,7 +14,7 @@ export default function ArticlePage({ article }) {
   }
 
   const plainText = (article.content || '').replace(/(<([^>]+)>)/gi, '')
-  const excerpt = plainText.length > 500 ? plainText.slice(0, 500) + '…' : plainText
+  const excerpt = plainText.length > 600 ? plainText.slice(0, 600) + '…' : plainText
 
   return (
     <>
@@ -37,28 +37,79 @@ export default function ArticlePage({ article }) {
           
           <h1 className="article-title">{article.title}</h1>
           
-          <p className="meta" style={{ fontSize: '14px', marginBottom: '24px' }}>
-            {new Date(article.pubDate).toLocaleString()} · {article.source}
+          <p className="meta" style={{ fontSize: '14px', marginBottom: '28px', color: 'var(--muted)' }}>
+            Published by {article.source} · {new Date(article.pubDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
 
-          <div className="article-body">
+          {article.imageUrl && (
+            <div style={{ 
+              width: '100%', 
+              maxHeight: '400px', 
+              overflow: 'hidden', 
+              borderRadius: '12px', 
+              marginBottom: '32px',
+              background: '#f1f5f9'
+            }}>
+              <img 
+                src={article.imageUrl} 
+                alt={article.title}
+                style={{ width: '100%', height: 'auto', display: 'block', objectFit: 'cover' }}
+              />
+            </div>
+          )}
+
+          {take && (
+            <div style={{
+              background: '#f8fafc',
+              borderLeft: '4px solid #2563eb',
+              padding: '20px 24px',
+              borderRadius: '8px',
+              marginBottom: '32px'
+            }}>
+              <div style={{
+                fontSize: '11px',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                color: '#2563eb',
+                marginBottom: '8px',
+                letterSpacing: '0.05em'
+              }}>
+                Why it matters
+              </div>
+              <p style={{ fontSize: '16px', lineHeight: '1.7', color: '#333', margin: 0, fontWeight: 500 }}>
+                {take}
+              </p>
+            </div>
+          )}
+
+          <div className="article-body" style={{ fontSize: '18px', lineHeight: '1.8', color: '#333' }}>
             <p>{excerpt || 'Read the full story at the source link below.'}</p>
           </div>
 
-          <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
+          <div style={{ 
+            marginTop: '48px', 
+            paddingTop: '24px', 
+            borderTop: '1px solid var(--border)',
+            textAlign: 'center'
+          }}>
             <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>
-              PulseAI provides summaries. To read the complete article, visit the original source.
+              PulseAI curates and summarizes. Read the full article at the original source.
             </p>
             <a
               className="source-link"
               href={article.link}
               target="_blank"
               rel="noopener noreferrer"
+              style={{ padding: '14px 28px', fontSize: '16px' }}
             >
               Read Full Article on {article.source} →
             </a>
           </div>
         </article>
+
+        <div style={{ marginTop: '32px', textAlign: 'center' }}>
+          <Link href="/"><a className="back-link">← Back to all stories</a></Link>
+        </div>
       </div>
     </>
   )
@@ -78,23 +129,23 @@ export async function getStaticProps({ params }) {
   const article = (articles || []).find(a => a.id === slug) || null
 
   if (article) {
-    const plainText = (article.content || '').replace(/(<([^>]+)>)/gi, '').slice(0, 200)
-    
+    // Try to fetch the AI take from Supabase (if this article was in the Pulse)
+    let take = null
+    try {
+      const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      )
+      const { data } = await supabase
+        .from('pulse_takes')
+        .select('take_engineer, take_pm, take_founder')
+        .eq('article_id', article.id)
+        .single()
+      if (data) take = data.take_engineer || data.take_pm || data.take_founder
+    } catch (e) {}
+
     return { 
-      props: { 
-        article,
-        metaTags: {
-          'og:title': article.title,
-          'og:description': plainText || article.title,
-          'og:type': 'article',
-          'og:url': `https://pulse-ai-tawny-psi.vercel.app/article/${article.id}`,
-          'og:image': article.imageUrl || '',
-          'twitter:card': 'summary_large_image',
-          'twitter:title': article.title,
-          'twitter:description': plainText || article.title,
-          'twitter:image': article.imageUrl || '',
-        }
-      }, 
+      props: { article, take },
       revalidate: 1800 
     }
   }
@@ -112,30 +163,18 @@ export async function getStaticProps({ params }) {
       .single()
 
     if (data && !error) {
-      const emailTake = data.take_email || data.take || data.article_title
-      
       return {
         props: {
           article: {
             title: data.article_title,
             link: data.article_link,
-            content: emailTake,
+            content: 'This story is from a previous day\'s pulse. Click the link below to read the full article.',
             source: data.source,
             category: data.category,
             pubDate: data.generated_at,
             imageUrl: data.image_url || null,
           },
-          metaTags: {
-            'og:title': data.article_title,
-            'og:description': emailTake,
-            'og:type': 'article',
-            'og:url': `https://pulse-ai-tawny-psi.vercel.app/article/${slug}`,
-            'og:image': data.image_url || '',
-            'twitter:card': 'summary_large_image',
-            'twitter:title': data.article_title,
-            'twitter:description': emailTake,
-            'twitter:image': data.image_url || '',
-          }
+          take: data.take_engineer || data.take_pm || data.take_founder || null
         },
         revalidate: 1800
       }
@@ -144,6 +183,5 @@ export async function getStaticProps({ params }) {
     console.warn('Supabase lookup failed:', err.message)
   }
 
-  // 3. If not found anywhere, show 404
   return { notFound: true, revalidate: 1800 }
 }
