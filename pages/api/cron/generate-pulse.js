@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 // v6 - split by category to avoid Vercel timeout
 export default async function handler(req, res) {
   try {
