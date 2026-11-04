@@ -131,23 +131,26 @@ export async function getStaticProps({ params }) {
   const article = (articles || []).find(a => a.id === slug) || null
 
   if (article) {
-    // Try to fetch the AI take from Supabase (if this article was in the Pulse)
     let take = null
+    let imageUrl = article.imageUrl
     try {
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        process.env.SUPABASE_SERVICE_ROLE_KEY
       )
       const { data } = await supabase
         .from('pulse_takes')
-        .select('take_engineer, take_pm, take_founder')
+        .select('take_engineer, take_pm, take_founder, image_url')
         .eq('article_id', article.id)
         .single()
-      if (data) take = data.take_engineer || data.take_pm || data.take_founder
+      if (data) {
+        take = data.take_engineer || data.take_pm || data.take_founder
+        if (data.image_url) imageUrl = data.image_url
+      }
     } catch (e) {}
 
     return { 
-      props: { article, take },
+      props: { article: { ...article, imageUrl }, take },
       revalidate: 1800 
     }
   }
@@ -156,7 +159,7 @@ export async function getStaticProps({ params }) {
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      process.env.SUPABASE_SERVICE_ROLE_KEY
     )
     const { data, error } = await supabase
       .from('pulse_takes')
