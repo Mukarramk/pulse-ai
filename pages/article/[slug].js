@@ -82,9 +82,11 @@ export default function ArticlePage({ article, take }) {
             </div>
           )}
 
-          <div className="article-body" style={{ fontSize: '18px', lineHeight: '1.8', color: '#333' }}>
-            <p>{excerpt || 'Read the full story at the source link below.'}</p>
-          </div>
+          {!take && (
+            <div className="article-body" style={{ fontSize: '18px', lineHeight: '1.8', color: '#333' }}>
+              <p>{excerpt || 'Read the full story at the source link below.'}</p>
+            </div>
+          )}
 
           <div style={{ 
             marginTop: '48px', 
