@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { fetchAllFeeds } from '../lib/rss'
+import PremiumButton from '../components/PremiumButton'
 
 const CATEGORIES = ['All', 'Models', 'Tools', 'Money', 'Policy']
 const PULSE_CATEGORIES = ['Models', 'Tools', 'Money', 'Policy']
@@ -22,10 +23,13 @@ export default function Home({ articles, pulse }) {
   const [tab, setTab] = useState('All')
   const [subStatus, setSubStatus] = useState({ type: '', message: '' })
   const [role, setRole] = useState('engineer')
+  const [userEmail, setUserEmail] = useState('')
 
   useEffect(() => {
     const savedRole = localStorage.getItem('pulse_role')
     if (savedRole) setRole(savedRole)
+    const savedEmail = localStorage.getItem('pulse_email')
+    if (savedEmail) setUserEmail(savedEmail)
   }, [])
 
   const handleRoleChange = (newRole) => {
@@ -54,6 +58,8 @@ export default function Home({ articles, pulse }) {
     
     if (res.ok) {
       setSubStatus({ type: 'success', message: 'Success! Check your inbox for a welcome email.' })
+      setUserEmail(email)
+      localStorage.setItem('pulse_email', email)
       e.target.reset()
     } else {
       setSubStatus({ type: 'error', message: data.error || 'Something went wrong.' })
@@ -319,6 +325,66 @@ export default function Home({ articles, pulse }) {
           {subStatus.type === 'error' && (
             <p className="subscribe-error">{subStatus.message}</p>
           )}
+        </section>
+
+        {/* Pricing Section */}
+        <section style={{
+          marginTop: '64px',
+          padding: '48px 32px',
+          background: 'linear-gradient(135deg, #f0f4ff, #faf5ff)',
+          border: '1px solid var(--border)',
+          borderRadius: '16px',
+          textAlign: 'center'
+        }}>
+          <h2 style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+            Go Premium with PulseAI Pro
+          </h2>
+          <p style={{ fontSize: '16px', color: 'var(--muted)', margin: '0 0 32px', maxWidth: '560px', marginLeft: 'auto', marginRight: 'auto' }}>
+            Ad-free newsletter, full archive access, and weekly deep dives. Start with a <strong>1-month free trial</strong> — cancel anytime.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', maxWidth: '720px', margin: '0 auto' }}>
+            
+            <div style={{
+              background: 'white',
+              border: '2px solid var(--border)',
+              borderRadius: '12px',
+              padding: '28px',
+              textAlign: 'left'
+            }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monthly</div>
+              <div style={{ fontSize: '32px', fontWeight: 800, margin: '8px 0 4px' }}>₹199<span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>/month</span></div>
+              <p style={{ fontSize: '14px', color: 'var(--muted)', margin: '0 0 20px' }}>Billed monthly after 30-day trial</p>
+              <PremiumButton planType="monthly" userEmail={userEmail} />
+            </div>
+
+            <div style={{
+              background: 'white',
+              border: '2px solid var(--primary)',
+              borderRadius: '12px',
+              padding: '28px',
+              textAlign: 'left',
+              position: 'relative'
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: '-12px',
+                right: '20px',
+                background: 'var(--primary)',
+                color: 'white',
+                padding: '4px 12px',
+                borderRadius: '999px',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.05em'
+              }}>BEST VALUE</div>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annual</div>
+              <div style={{ fontSize: '32px', fontWeight: 800, margin: '8px 0 4px' }}>₹1,999<span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>/year</span></div>
+              <p style={{ fontSize: '14px', color: 'var(--muted)', margin: '0 0 20px' }}>2 months free · billed yearly after 30-day trial</p>
+              <PremiumButton planType="annual" userEmail={userEmail} />
+            </div>
+
+          </div>
         </section>
 
         <footer className="footer">
