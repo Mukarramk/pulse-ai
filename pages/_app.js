@@ -17,8 +17,8 @@ export default function App({ Component, pageProps }) {
         <meta property="og:locale" content="en_US" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@pulseai" />
+        <script src="https://checkout.razorpay.com/v1/checkout.js" async />
         
-        {/* Render dynamic meta tags passed from any page */}
         {metaTags && Object.entries(metaTags).map(([property, content]) =>
           content ? <meta key={property} property={property} content={content} /> : null
         )}
