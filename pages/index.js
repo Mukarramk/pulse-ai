@@ -19,7 +19,7 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString()
 }
 
-export default function Home({ articles, pulse }) {
+export default function Home({ articles, pulse, userCountry }) {
   const [tab, setTab] = useState('All')
   const [subStatus, setSubStatus] = useState({ type: '', message: '' })
   const [role, setRole] = useState('engineer')
@@ -327,7 +327,6 @@ export default function Home({ articles, pulse }) {
           )}
         </section>
 
-        {/* Pricing Section */}
         <section style={{
           marginTop: '64px',
           padding: '48px 32px',
@@ -339,51 +338,50 @@ export default function Home({ articles, pulse }) {
           <h2 style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 8px', letterSpacing: '-0.02em' }}>
             Go Premium with PulseAI Pro
           </h2>
-          <p style={{ fontSize: '16px', color: 'var(--muted)', margin: '0 0 32px', maxWidth: '560px', marginLeft: 'auto', marginRight: 'auto' }}>
+          <p style={{ fontSize: '16px', color: 'var(--muted)', margin: '0 0 8px', maxWidth: '560px', marginLeft: 'auto', marginRight: 'auto' }}>
             Ad-free newsletter, full archive access, and weekly deep dives. Start with a <strong>1-month free trial</strong> — cancel anytime.
+          </p>
+          <p style={{ fontSize: '13px', color: 'var(--muted)', margin: '0 0 32px' }}>
+            {userCountry === 'IN' ? '🇮🇳 Showing Indian pricing (₹ INR)' : '🌍 Showing global pricing ($ USD)'}
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', maxWidth: '720px', margin: '0 auto' }}>
             
-            <div style={{
-              background: 'white',
-              border: '2px solid var(--border)',
-              borderRadius: '12px',
-              padding: '28px',
-              textAlign: 'left'
-            }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monthly</div>
-              <div style={{ fontSize: '32px', fontWeight: 800, margin: '8px 0 4px' }}>₹199<span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>/month</span></div>
-              <p style={{ fontSize: '14px', color: 'var(--muted)', margin: '0 0 20px' }}>Billed monthly after 30-day trial</p>
-              <PremiumButton planType="monthly" userEmail={userEmail} />
-            </div>
+            {userCountry === 'IN' ? (
+              <>
+                <div style={{ background: 'white', border: '2px solid var(--border)', borderRadius: '12px', padding: '28px', textAlign: 'left' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monthly</div>
+                  <div style={{ fontSize: '32px', fontWeight: 800, margin: '8px 0 4px' }}>₹199<span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>/month</span></div>
+                  <p style={{ fontSize: '14px', color: 'var(--muted)', margin: '0 0 20px' }}>Billed monthly after 30-day trial</p>
+                  <PremiumButton planType="monthly" userEmail={userEmail} gateway="razorpay" />
+                </div>
 
-            <div style={{
-              background: 'white',
-              border: '2px solid var(--primary)',
-              borderRadius: '12px',
-              padding: '28px',
-              textAlign: 'left',
-              position: 'relative'
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: '-12px',
-                right: '20px',
-                background: 'var(--primary)',
-                color: 'white',
-                padding: '4px 12px',
-                borderRadius: '999px',
-                fontSize: '11px',
-                fontWeight: 700,
-                letterSpacing: '0.05em'
-              }}>BEST VALUE</div>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annual</div>
-              <div style={{ fontSize: '32px', fontWeight: 800, margin: '8px 0 4px' }}>₹1,999<span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>/year</span></div>
-              <p style={{ fontSize: '14px', color: 'var(--muted)', margin: '0 0 20px' }}>2 months free · billed yearly after 30-day trial</p>
-              <PremiumButton planType="annual" userEmail={userEmail} />
-            </div>
+                <div style={{ background: 'white', border: '2px solid var(--primary)', borderRadius: '12px', padding: '28px', textAlign: 'left', position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: '-12px', right: '20px', background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em' }}>BEST VALUE</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annual</div>
+                  <div style={{ fontSize: '32px', fontWeight: 800, margin: '8px 0 4px' }}>₹1,999<span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>/year</span></div>
+                  <p style={{ fontSize: '14px', color: 'var(--muted)', margin: '0 0 20px' }}>2 months free · billed yearly after 30-day trial</p>
+                  <PremiumButton planType="annual" userEmail={userEmail} gateway="razorpay" />
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ background: 'white', border: '2px solid var(--border)', borderRadius: '12px', padding: '28px', textAlign: 'left' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Monthly</div>
+                  <div style={{ fontSize: '32px', fontWeight: 800, margin: '8px 0 4px' }}>$7<span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>/month</span></div>
+                  <p style={{ fontSize: '14px', color: 'var(--muted)', margin: '0 0 20px' }}>Billed monthly after 30-day trial</p>
+                  <PremiumButton planType="monthly" userEmail={userEmail} gateway="stripe" />
+                </div>
 
+                <div style={{ background: 'white', border: '2px solid var(--primary)', borderRadius: '12px', padding: '28px', textAlign: 'left', position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: '-12px', right: '20px', background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em' }}>BEST VALUE</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Annual</div>
+                  <div style={{ fontSize: '32px', fontWeight: 800, margin: '8px 0 4px' }}>$69<span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--muted)' }}>/year</span></div>
+                  <p style={{ fontSize: '14px', color: 'var(--muted)', margin: '0 0 20px' }}>2 months free · billed yearly after 30-day trial</p>
+                  <PremiumButton planType="annual" userEmail={userEmail} gateway="stripe" />
+                </div>
+              </>
+            )}
           </div>
         </section>
 
@@ -395,7 +393,7 @@ export default function Home({ articles, pulse }) {
   )
 }
 
-export async function getServerSideProps() {
+export async function getServerSideProps(context) {
   const articles = await fetchAllFeeds().catch((err) => {
     console.warn('fetchAllFeeds failed:', err?.message || err)
     return []
@@ -431,10 +429,13 @@ export async function getServerSideProps() {
     console.warn('Supabase fetch failed:', err?.message || err)
   }
 
+  const userCountry = context?.req?.headers['x-vercel-ip-country'] || 'IN'
+
   return {
     props: {
       articles: articles.slice(0, 200),
-      pulse
+      pulse,
+      userCountry
     }
   }
 }
