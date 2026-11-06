@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       subscriptionId: subscription.id,
       shortUrl: subscription.short_url,
-      keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      keyId: 'rzp_live_TwwemhtROnefsy',
     })
   } catch (err) {
     return res.status(500).json({ error: err.message })
