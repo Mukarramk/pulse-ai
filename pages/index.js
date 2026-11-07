@@ -390,7 +390,14 @@ export default function Home({ articles, pulse, userCountry }) {
         )}
 
         <footer className="footer">
-          PulseAI aggregates headlines from public RSS feeds. All content belongs to the original publishers.
+          <p style={{ margin: '0 0 8px' }}>
+            PulseAI aggregates headlines from public RSS feeds. All content belongs to the original publishers.
+          </p>
+          <p style={{ margin: 0, fontSize: '13px' }}>
+            <Link href="/terms"><a style={{ color: 'var(--muted)', marginRight: '16px' }}>Terms</a></Link>
+            <Link href="/privacy"><a style={{ color: 'var(--muted)', marginRight: '16px' }}>Privacy</a></Link>
+            <Link href="/refund"><a style={{ color: 'var(--muted)' }}>Refunds</a></Link>
+          </p>
         </footer>
       </div>
     </>
