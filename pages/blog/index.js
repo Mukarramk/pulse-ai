@@ -49,15 +49,18 @@ export async function getStaticProps() {
   const postsDir = path.join(process.cwd(), 'posts')
   const filenames = fs.readdirSync(postsDir)
   
-  const posts = filenames.map(filename => {
-    const filePath = path.join(postsDir, filename)
-    const fileContents = fs.readFileSync(filePath, 'utf8')
-    const { data } = matter(fileContents)
-    return {
-      slug: filename.replace('.md', ''),
-      ...data
-    }
-  })
+  // Only process files ending in .md (ignore the deep-dives folder)
+  const posts = filenames
+    .filter(filename => filename.endsWith('.md'))
+    .map(filename => {
+      const filePath = path.join(postsDir, filename)
+      const fileContents = fs.readFileSync(filePath, 'utf8')
+      const { data } = matter(fileContents)
+      return {
+        slug: filename.replace('.md', ''),
+        ...data
+      }
+    })
 
   // Sort by date, newest first
   posts.sort((a, b) => new Date(b.date) - new Date(a.date))
