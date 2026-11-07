@@ -1,9 +1,32 @@
 import Head from 'next/head'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { fetchAllFeeds } from '../../lib/rss'
 
-export default function ArticlePage({ article, take }) {
+export default function ArticlePage({ article }) {
+  const [isPremium, setIsPremium] = useState(false)
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    async function checkPremium() {
+      const email = localStorage.getItem('pulse_email')
+      if (!email) {
+        setChecking(false)
+        return
+      }
+      try {
+        const res = await fetch(`/api/check-premium?email=${encodeURIComponent(email)}`)
+        const data = await res.json()
+        setIsPremium(data.isPremium || false)
+      } catch (e) {
+        console.error('Premium check failed:', e)
+      }
+      setChecking(false)
+    }
+    checkPremium()
+  }, [])
+
   if (!article) {
     return (
       <div className="container">
@@ -13,8 +36,15 @@ export default function ArticlePage({ article, take }) {
     )
   }
 
+  // Article is "archived" if it's older than 24 hours
+  const publishedAt = new Date(article.pubDate).getTime()
+  const isArchived = Date.now() - publishedAt > 24 * 60 * 60 * 1000
+
   const plainText = (article.content || '').replace(/(<([^>]+)>)/gi, '')
   const excerpt = plainText.length > 600 ? plainText.slice(0, 600) + '…' : plainText
+
+  // If archived AND user is not premium AND we've finished checking → show paywall
+  const showPaywall = isArchived && !isPremium && !checking
 
   return (
     <>
@@ -58,55 +88,68 @@ export default function ArticlePage({ article, take }) {
             </div>
           )}
 
-          {take && (
+          {showPaywall ? (
             <div style={{
-              background: '#f8fafc',
-              borderLeft: '4px solid #2563eb',
-              padding: '20px 24px',
-              borderRadius: '8px',
-              marginBottom: '32px'
+              background: 'linear-gradient(135deg, #f0f4ff, #faf5ff)',
+              border: '2px solid #2563eb',
+              borderRadius: '16px',
+              padding: '40px 32px',
+              textAlign: 'center',
+              marginTop: '24px'
             }}>
-              <div style={{
-                fontSize: '11px',
-                fontWeight: 800,
-                textTransform: 'uppercase',
-                color: '#2563eb',
-                marginBottom: '8px',
-                letterSpacing: '0.05em'
-              }}>
-                Why it matters
-              </div>
-              <p style={{ fontSize: '16px', lineHeight: '1.7', color: '#333', margin: 0, fontWeight: 500 }}>
-                {take}
+              <div style={{ fontSize: '40px', marginBottom: '16px' }}>🔒</div>
+              <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 12px 0', color: '#0a0a0a' }}>
+                This story is part of the PulseAI archive
+              </h2>
+              <p style={{ fontSize: '16px', lineHeight: 1.6, color: '#666', margin: '0 0 24px 0' }}>
+                Free users get today's stories. Upgrade to <strong>PulseAI Pro</strong> to unlock the full archive, ad-free newsletters, and weekly Deep Dives.
+              </p>
+              <a 
+                href="/#pricing"
+                style={{
+                  display: 'inline-block',
+                  background: '#2563eb',
+                  color: 'white',
+                  padding: '14px 28px',
+                  borderRadius: '10px',
+                  textDecoration: 'none',
+                  fontWeight: 700,
+                  fontSize: '16px'
+                }}
+              >
+                Start 1-Month Free Trial →
+              </a>
+              <p style={{ fontSize: '13px', color: '#999', margin: '16px 0 0 0' }}>
+                Or <a href={article.link} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>read the original on {article.source} ↗</a>
               </p>
             </div>
-          )}
+          ) : (
+            <>
+              <div className="article-body" style={{ fontSize: '18px', lineHeight: '1.8', color: '#333' }}>
+                <p>{excerpt || 'Read the full story at the source link below.'}</p>
+              </div>
 
-          {!take && (
-            <div className="article-body" style={{ fontSize: '18px', lineHeight: '1.8', color: '#333' }}>
-              <p>{excerpt || 'Read the full story at the source link below.'}</p>
-            </div>
+              <div style={{ 
+                marginTop: '48px', 
+                paddingTop: '24px', 
+                borderTop: '1px solid var(--border)',
+                textAlign: 'center'
+              }}>
+                <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>
+                  PulseAI curates and summarizes. Read the full article at the original source.
+                </p>
+                <a
+                  className="source-link"
+                  href={article.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ padding: '14px 28px', fontSize: '16px' }}
+                >
+                  Read Full Article on {article.source} →
+                </a>
+              </div>
+            </>
           )}
-
-          <div style={{ 
-            marginTop: '48px', 
-            paddingTop: '24px', 
-            borderTop: '1px solid var(--border)',
-            textAlign: 'center'
-          }}>
-            <p style={{ fontSize: '14px', color: 'var(--muted)', marginBottom: '16px' }}>
-              PulseAI curates and summarizes. Read the full article at the original source.
-            </p>
-            <a
-              className="source-link"
-              href={article.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ padding: '14px 28px', fontSize: '16px' }}
-            >
-              Read Full Article on {article.source} →
-            </a>
-          </div>
         </article>
 
         <div style={{ marginTop: '32px', textAlign: 'center' }}>
@@ -125,33 +168,13 @@ export async function getStaticPaths() {
 
 export async function getStaticProps({ params }) {
   const slug = params.slug
-  
-  // 1. Try to find the article in the live RSS feed
   const articles = await fetchAllFeeds().catch(() => [])
   const article = (articles || []).find(a => a.id === slug) || null
 
   if (article) {
-    let take = null
-    try {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      )
-      const { data } = await supabase
-        .from('pulse_takes')
-        .select('take_engineer, take_pm, take_founder')
-        .eq('article_id', article.id)
-        .single()
-      if (data) take = data.take_engineer || data.take_pm || data.take_founder
-    } catch (e) {}
-
-    return { 
-      props: { article, take },
-      revalidate: 1800 
-    }
+    return { props: { article }, revalidate: 1800 }
   }
 
-  // 2. If not found in RSS, check Supabase for the saved Pulse take
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -174,8 +197,7 @@ export async function getStaticProps({ params }) {
             category: data.category,
             pubDate: data.generated_at,
             imageUrl: data.image_url || null,
-          },
-          take: data.take_engineer || data.take_pm || data.take_founder || null
+          }
         },
         revalidate: 1800
       }
