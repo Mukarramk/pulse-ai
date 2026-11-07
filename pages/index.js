@@ -107,6 +107,7 @@ export default function Home({ articles, pulse, userCountry }) {
             <span className="logo-text">PulseAI</span>
           </a></Link>
           <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+            <Link href="/deep-dives"><a className="read-more">Deep Dives</a></Link>
             <Link href="/blog"><a className="read-more">Blog</a></Link>
             <span className="header-meta">Updated every 30 min</span>
           </div>
