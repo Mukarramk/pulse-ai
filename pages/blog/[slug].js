@@ -39,9 +39,14 @@ export default function BlogPost({ frontmatter, content }) {
 export async function getStaticPaths() {
   const postsDir = path.join(process.cwd(), 'posts')
   const filenames = fs.readdirSync(postsDir)
-  const paths = filenames.map(filename => ({
-    params: { slug: filename.replace('.md', '') }
-  }))
+  
+  // Only include .md files (ignore the deep-dives folder)
+  const paths = filenames
+    .filter(filename => filename.endsWith('.md'))
+    .map(filename => ({
+      params: { slug: filename.replace('.md', '') }
+    }))
+  
   return { paths, fallback: false }
 }
 
