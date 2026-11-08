@@ -11,7 +11,6 @@ export default async function handler(req, res) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     )
 
-    // 1. Fetch today's Pulse takes
     const { data: takes, error: takesError } = await supabase
       .from('pulse_takes')
       .select('*')
@@ -20,7 +19,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'No pulse data found' })
     }
 
-    // 2. Fetch all subscribers
     const { data: subscribers, error: subError } = await supabase
       .from('subscribers')
       .select('email')
@@ -29,7 +27,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ message: 'No subscribers yet' })
     }
 
-    // 3. Build the HTML email
     const dateStr = new Date().toLocaleDateString('en-US', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     })
@@ -79,80 +76,80 @@ export default async function handler(req, res) {
       `
     }).join('')
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fafafa; margin: 0; padding: 0;">
-        <div style="max-width: 620px; margin: 0 auto; background: #ffffff;">
-          
-          <!-- Top bar -->
-          <div style="background: linear-gradient(135deg, #2563eb, #7c3aed); padding: 28px 32px; text-align: center;">
-            <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #ffffff;">PulseAI</div>
-            <div style="font-size: 13px; color: rgba(255,255,255,0.85); margin-top: 6px;">${dateStr}</div>
-          </div>
-
-          <!-- Body -->
-          <div style="padding: 40px 32px;">
-            
-            <h1 style="font-size: 26px; font-weight: 800; line-height: 1.3; margin: 0 0 8px 0; color: #0a0a0a; letter-spacing: -0.02em;">
-              Your Daily Pulse
-            </h1>
-            <p style="font-size: 15px; line-height: 1.6; color: #666; margin: 0 0 36px 0;">
-              The most important AI & tech stories for busy professionals — in 5 minutes.
-            </p>
-
-            ${pulseHtml}
-
-            <!-- Sponsor CTA -->
-            <div style="background: linear-gradient(135deg, #f0f4ff, #faf5ff); border: 1px solid #e5e7eb; border-radius: 14px; padding: 28px; margin: 40px 0 32px 0; text-align: center;">
-              <h3 style="font-size: 17px; font-weight: 800; margin: 0 0 8px 0; color: #0a0a0a;">Want to sponsor PulseAI?</h3>
-              <p style="font-size: 14px; line-height: 1.6; color: #666; margin: 0 0 16px 0;">
-                Reach busy engineers, PMs, and founders. Just reply to this email.
-              </p>
-              <a href="mailto:consultancymukarram@gmail.com?subject=Sponsoring%20PulseAI" style="display: inline-block; background: #0a0a0a; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px;">
-                Get in touch →
-              </a>
-            </div>
-
-            <!-- Premium upsell -->
-            <div style="background: #ffffff; border: 2px solid #2563eb; border-radius: 14px; padding: 24px; margin: 0 0 32px 0; text-align: center;">
-              <div style="font-size: 11px; font-weight: 800; color: #2563eb; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">PulseAI Pro</div>
-              <h3 style="font-size: 17px; font-weight: 800; margin: 0 0 8px 0; color: #0a0a0a;">Go deeper with PulseAI Pro</h3>
-              <p style="font-size: 14px; line-height: 1.6; color: #666; margin: 0 0 16px 0;">
-                Ad-free newsletter, full archive, and weekly Deep Dives. 1-month free trial.
-              </p>
-              <a href="${SITE_URL}#pricing" style="display: inline-block; background: #2563eb; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px;">
-                Start Free Trial →
-              </a>
-            </div>
-
-            <!-- Footer -->
-            <div style="padding-top: 24px; border-top: 1px solid #eaeaea; text-align: center;">
-              <p style="font-size: 12px; color: #999; line-height: 1.6; margin: 0 0 8px 0;">
-                PulseAI aggregates headlines from public RSS feeds.<br/>
-                All content belongs to the original publishers.
-              </p>
-              <p style="font-size: 12px; color: #999; margin: 0 0 8px 0;">
-                <a href="${SITE_URL}?${utm}" style="color: #999; text-decoration: underline;">Visit the website</a>
-                <span style="margin: 0 6px;">·</span>
-                <a href="${SITE_URL}/blog" style="color: #999; text-decoration: underline;">Read the blog</a>
-              </p>
-              <p style="font-size: 11px; color: #bbb; margin: 0;">
-                <a href="${SITE_URL}/terms" style="color: #bbb;">Terms</a>
-                · <a href="${SITE_URL}/privacy" style="color: #bbb;">Privacy</a>
-                · <a href="${SITE_URL}/refund" style="color: #bbb;">Refunds</a>
-              </p>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
-
-    // 4. Send to each subscriber
+    // Send to each subscriber with their own unsubscribe link
     const results = []
     for (const sub of subscribers) {
+      const unsubscribeLink = `${SITE_URL}/api/unsubscribe?email=${encodeURIComponent(sub.email)}`
+      
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fafafa; margin: 0; padding: 0;">
+          <div style="max-width: 620px; margin: 0 auto; background: #ffffff;">
+            
+            <div style="background: linear-gradient(135deg, #2563eb, #7c3aed); padding: 28px 32px; text-align: center;">
+              <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: #ffffff;">PulseAI</div>
+              <div style="font-size: 13px; color: rgba(255,255,255,0.85); margin-top: 6px;">${dateStr}</div>
+            </div>
+
+            <div style="padding: 40px 32px;">
+              
+              <h1 style="font-size: 26px; font-weight: 800; line-height: 1.3; margin: 0 0 8px 0; color: #0a0a0a; letter-spacing: -0.02em;">
+                Your Daily Pulse
+              </h1>
+              <p style="font-size: 15px; line-height: 1.6; color: #666; margin: 0 0 36px 0;">
+                The most important AI & tech stories for busy professionals — in 5 minutes.
+              </p>
+
+              ${pulseHtml}
+
+              <div style="background: linear-gradient(135deg, #f0f4ff, #faf5ff); border: 1px solid #e5e7eb; border-radius: 14px; padding: 28px; margin: 40px 0 32px 0; text-align: center;">
+                <h3 style="font-size: 17px; font-weight: 800; margin: 0 0 8px 0; color: #0a0a0a;">Want to sponsor PulseAI?</h3>
+                <p style="font-size: 14px; line-height: 1.6; color: #666; margin: 0 0 16px 0;">
+                  Reach busy engineers, PMs, and founders. Just reply to this email.
+                </p>
+                <a href="mailto:consultancymukarram@gmail.com?subject=Sponsoring%20PulseAI" style="display: inline-block; background: #0a0a0a; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px;">
+                  Get in touch →
+                </a>
+              </div>
+
+              <div style="background: #ffffff; border: 2px solid #2563eb; border-radius: 14px; padding: 24px; margin: 0 0 32px 0; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #2563eb; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">PulseAI Pro</div>
+                <h3 style="font-size: 17px; font-weight: 800; margin: 0 0 8px 0; color: #0a0a0a;">Go deeper with PulseAI Pro</h3>
+                <p style="font-size: 14px; line-height: 1.6; color: #666; margin: 0 0 16px 0;">
+                  Ad-free newsletter, full archive, and weekly Deep Dives. 1-month free trial.
+                </p>
+                <a href="${SITE_URL}#pricing" style="display: inline-block; background: #2563eb; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px;">
+                  Start Free Trial →
+                </a>
+              </div>
+
+              <div style="padding-top: 24px; border-top: 1px solid #eaeaea; text-align: center;">
+                <p style="font-size: 12px; color: #999; line-height: 1.6; margin: 0 0 8px 0;">
+                  PulseAI aggregates headlines from public RSS feeds.<br/>
+                  All content belongs to the original publishers.
+                </p>
+                <p style="font-size: 12px; color: #999; margin: 0 0 8px 0;">
+                  <a href="${SITE_URL}?${utm}" style="color: #999; text-decoration: underline;">Visit the website</a>
+                  <span style="margin: 0 6px;">·</span>
+                  <a href="${SITE_URL}/blog" style="color: #999; text-decoration: underline;">Read the blog</a>
+                </p>
+                <p style="font-size: 11px; color: #bbb; margin: 0 0 8px 0;">
+                  <a href="${SITE_URL}/terms" style="color: #bbb;">Terms</a>
+                  · <a href="${SITE_URL}/privacy" style="color: #bbb;">Privacy</a>
+                  · <a href="${SITE_URL}/refund" style="color: #bbb;">Refunds</a>
+                </p>
+                <p style="font-size: 11px; color: #bbb; margin: 0;">
+                  <a href="${unsubscribeLink}" style="color: #bbb; text-decoration: underline;">Unsubscribe</a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+
       try {
         await resend.emails.send({
           from: 'PulseAI <onboarding@resend.dev>',
