@@ -394,10 +394,15 @@ export default function Home({ articles, pulse, userCountry }) {
           <p style={{ margin: '0 0 8px' }}>
             PulseAI aggregates headlines from public RSS feeds. All content belongs to the original publishers.
           </p>
-          <p style={{ margin: 0, fontSize: '13px' }}>
-            <Link href="/terms"><a style={{ color: 'var(--muted)', marginRight: '16px' }}>Terms</a></Link>
-            <Link href="/privacy"><a style={{ color: 'var(--muted)', marginRight: '16px' }}>Privacy</a></Link>
-            <Link href="/refund"><a style={{ color: 'var(--muted)' }}>Refunds</a></Link>
+          <p style={{ margin: '0 0 8px', fontSize: '13px', color: 'var(--muted)' }}>
+            <Link href="/terms"><a style={{ color: 'var(--muted)', textDecoration: 'underline' }}>Terms</a></Link>
+            <span style={{ margin: '0 10px' }}>·</span>
+            <Link href="/privacy"><a style={{ color: 'var(--muted)', textDecoration: 'underline' }}>Privacy</a></Link>
+            <span style={{ margin: '0 10px' }}>·</span>
+            <Link href="/refund"><a style={{ color: 'var(--muted)', textDecoration: 'underline' }}>Refunds</a></Link>
+          </p>
+          <p style={{ margin: 0, fontSize: '12px', color: 'var(--muted)' }}>
+            © 2026 PulseAI. All rights reserved.
           </p>
         </footer>
       </div>
