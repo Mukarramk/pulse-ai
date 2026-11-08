@@ -76,7 +76,7 @@ export default async function handler(req, res) {
       `
     }).join('')
 
-    // Send to each subscriber with their own unsubscribe link
+    // 4. Send to each subscriber with their own unsubscribe link
     const results = []
     for (const sub of subscribers) {
       const unsubscribeLink = `${SITE_URL}/api/unsubscribe?email=${encodeURIComponent(sub.email)}`
